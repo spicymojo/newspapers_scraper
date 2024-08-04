@@ -6,14 +6,17 @@ class newspaper:
     def __str__(self):
         return f"{self.title}: " + ", ".join(self.urls)
 
-wanted_titles = ['El Mundo', 'El País', 'Marca', 'La Provincia (Las Palmas)']
+    def filter_urls(self, wanted_servers):
+        self.urls = [url for url in self.urls if any(server in url for server in wanted_servers)]
+
 
 wanted_titles = ['El Mundo', 'El País', 'Marca', 'La Provincia (Las Palmas)']
+wanted_servers = ['dailyuploads.net']
 
-def is_wanted_title(title):
+def is_wanted_newspaper(title):
     return title in wanted_titles
 
-def extract_news_groups(soup):
+def find_wanted_newspapers(soup):
     news_groups = []
     if soup:
         bb_wrappers = soup.find_all(class_='bbWrapper')
@@ -23,15 +26,16 @@ def extract_news_groups(soup):
             urls = []
             for line in text:
                 if line.startswith('----') and line.endswith('----'):
-                    if title and urls and is_wanted_title(title):
-                        news_groups.append(newspaper(title, urls))
+                    if title and urls and is_wanted_newspaper(title):
+                        news_group = newspaper(title, urls)
+                        news_group.filter_urls(wanted_servers)
+                        news_groups.append(news_group)
                     title = line.strip('- ').strip()
                     urls = []
                 elif line.startswith('http'):
                     urls.append(line.strip())
-            if title and urls and is_wanted_title(title):
-                news_groups.append(newspaper(title, urls))
+            if title and urls and is_wanted_newspaper(title):
+                news_group = newspaper(title, urls)
+                news_group.filter_urls(wanted_servers)
+                news_groups.append(news_group)
     return news_groups
-
-def find_wanted_newspapers(soup):
-    return extract_news_groups(soup)
